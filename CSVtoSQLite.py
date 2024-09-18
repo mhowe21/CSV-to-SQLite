@@ -7,12 +7,11 @@ import sqlite3
 def main():
     print("Welcome to CSVtoSQLite!")
     print("This program will convert all CSV files in a folder into SQLite databases.")
-    print("Please enter the following information:")
-    print("folderPath: The path to the folder containing the CSV log files.")
+    print("folderPath: Enter the path to the folder containing the CSV log files. ")
     inputFolder = inputFolderPath()
-    print("exportFolder: The path to the folder where the SQLite databases will be exported.")
+    print("exportFolder: The path to the folder where the SQLite databases will be exported. ")
     exportFolder = exportFolderPath()
-    print("The name of the SQLite database.")
+    print("The name of the SQLite database. ")
     dbName = databaseName()
     csvToSqlite(inputFolder, exportFolder, dbName)
 
