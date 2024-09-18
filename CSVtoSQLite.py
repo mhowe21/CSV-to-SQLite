@@ -66,7 +66,7 @@ def csvToSqlite(folderPath, dbFolderPath, databaseName):
             print(f"Processing {filename}...")
             # Read CSV file into DataFrame
             filePath = os.path.join(folderPath, filename)
-            df = pandas.read_csv(filePath)
+            df = pandas.read_csv(filePath, low_memory=False)
 
             # Remove duplicates that exist within the first row
             firstRow = df.iloc[0]
@@ -82,6 +82,7 @@ def csvToSqlite(folderPath, dbFolderPath, databaseName):
 
     # Close the SQLite connection
     conn.close()
+    print("Done, exiting")
 
 
 if __name__ == "__main__":
