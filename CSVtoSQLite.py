@@ -67,7 +67,9 @@ def csvToSqlite(folderPath, dbFolderPath, databaseName):
             filePath = os.path.join(folderPath, filename)
             df = pandas.read_csv(filePath, low_memory=False)
             # Process using Dask for larger dataframes
-            ddf = dd.from_pandas(df, npartitions=2)
+            # Adjust npartitions as needed
+            ddf = dd.from_pandas(df, npartitions=4)
+            df = ddf.compute()  # Convert Dask DataFrame back to Pandas Data
             # Remove duplicates that exist within the first row
             firstRow = df.iloc[0]
             df = df.drop_duplicates(subset=firstRow.index.tolist())
