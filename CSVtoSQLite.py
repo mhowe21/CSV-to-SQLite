@@ -1,8 +1,7 @@
 # import libraries
 import os
-import pandas
-import sqlite3
 import dask.dataframe as dd
+import sqlite3
 
 
 def main():
@@ -26,7 +25,6 @@ def inputFolderPath():
             print("Unable to locate folder. Please try again.")
             return inputFolderPath()
     except:
-        # recursive call if an exception occurs
         print("Invalid path. Please try again.")
         return inputFolderPath()
 
@@ -40,7 +38,6 @@ def exportFolderPath():
             print("Unable to locate folder. Please try again.")
             return exportFolderPath()
     except:
-        # recursive call if an exception occurs
         print("Invalid path. Please try again.")
         return exportFolderPath()
 
@@ -57,28 +54,33 @@ def databaseName():
 def csvToSqlite(folderPath, dbFolderPath, databaseName):
     # specify SQLite database path, file name, and extension
     dbPath = os.path.join(dbFolderPath, databaseName + '.db')
-    dbConnection = sqlite3.connect(dbPath)
-    cursor = dbConnection.cursor()
-    # Create a table to store the CSV data
+
+    # Connect to SQLite database (or create it)
+    conn = sqlite3.connect(dbPath)
+    cursor = conn.cursor()
+
+    # Iterate through all CSV files in the folder
     for filename in os.listdir(folderPath):
         if filename.endswith('.csv'):
             print(f"Processing {filename}...")
-            # Read CSV file into Dask DataFrame
+            # Read CSV file into DataFrame
             filePath = os.path.join(folderPath, filename)
-            ddf = dd.read_csv(filePath)
+            ddf = dd.read_csv(filePath, low_memory=False)
+
             # Remove duplicates that exist within the first row
-            firstRow = ddf.head(1)
+            firstRow = ddf.head(1).compute()
             ddf = ddf.drop_duplicates(subset=firstRow.columns.tolist())
+
             # Get table name from CSV file name (without extension)
             tableName = os.path.splitext(filename)[0]
             # Replace spaces with underscores
             tableName = tableName.replace(' ', '_')
-            # Convert Dask DataFrame back to Pandas DataFrame and write to SQL
-            ddf.to_sql(tableName, dbConnection,
-                       if_exists='replace', index=False, compute=True)
+
+            # Write DataFrame to SQLite table using 'replace' mode
+            ddf.to_sql(tableName, conn, if_exists='replace', index=False)
 
     # Close the SQLite connection
-    dbConnection.close()
+    conn.close()
     print("Done, exiting")
 
 
