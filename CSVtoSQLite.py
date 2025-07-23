@@ -63,22 +63,19 @@ def csvToSqlite(folderPath, dbFolderPath, databaseName):
     for filename in os.listdir(folderPath):
         if filename.endswith('.csv'):
             print(f"Processing {filename}...")
-            # Read CSV file into DataFrame
+            # Read CSV file into Dask DataFrame
             filePath = os.path.join(folderPath, filename)
-            df = pandas.read_csv(filePath, low_memory=False)
-            # Process using Dask for larger dataframes
-            # Adjust npartitions as needed
-            ddf = dd.from_pandas(df, npartitions=4)
-            df = ddf.compute()  # Convert Dask DataFrame back to Pandas Data
+            ddf = dd.read_csv(filePath)
             # Remove duplicates that exist within the first row
-            firstRow = df.iloc[0]
-            df = df.drop_duplicates(subset=firstRow.index.tolist())
+            firstRow = ddf.head(1)
+            ddf = ddf.drop_duplicates(subset=firstRow.columns.tolist())
             # Get table name from CSV file name (without extension)
             tableName = os.path.splitext(filename)[0]
             # Replace spaces with underscores
             tableName = tableName.replace(' ', '_')
-            df.to_sql(tableName, dbConnection,
-                      if_exists='replace', index=False)
+            # Convert Dask DataFrame back to Pandas DataFrame and write to SQL
+            ddf.to_sql(tableName, dbConnection,
+                       if_exists='replace', index=False, compute=True)
 
     # Close the SQLite connection
     dbConnection.close()
