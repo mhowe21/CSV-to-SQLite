@@ -25,6 +25,7 @@ def inputFolderPath():
             print("Unable to locate folder. Please try again.")
             return inputFolderPath()
     except:
+        # recursive call if an exception occurs
         print("Invalid path. Please try again.")
         return inputFolderPath()
 
@@ -38,6 +39,7 @@ def exportFolderPath():
             print("Unable to locate folder. Please try again.")
             return exportFolderPath()
     except:
+        # recursive call if an exception occurs
         print("Invalid path. Please try again.")
         return exportFolderPath()
 
@@ -54,11 +56,9 @@ def databaseName():
 def csvToSqlite(folderPath, dbFolderPath, databaseName):
     # specify SQLite database path, file name, and extension
     dbPath = os.path.join(dbFolderPath, databaseName + '.db')
-
     # Connect to SQLite database (or create it)
-    conn = sqlite3.connect(dbPath)
-    cursor = conn.cursor()
-
+    dbConnection = sqlite3.connect(dbPath)
+    cursor = dbConnection.cursor()
     # Iterate through all CSV files in the folder
     for filename in os.listdir(folderPath):
         if filename.endswith('.csv'):
@@ -66,21 +66,18 @@ def csvToSqlite(folderPath, dbFolderPath, databaseName):
             # Read CSV file into DataFrame
             filePath = os.path.join(folderPath, filename)
             df = pandas.read_csv(filePath, low_memory=False)
-
             # Remove duplicates that exist within the first row
             firstRow = df.iloc[0]
             df = df.drop_duplicates(subset=firstRow.index.tolist())
-
             # Get table name from CSV file name (without extension)
             tableName = os.path.splitext(filename)[0]
             # Replace spaces with underscores
             tableName = tableName.replace(' ', '_')
-
-            # Write DataFrame to SQLite table using 'replace' mode
-            df.to_sql(tableName, conn, if_exists='replace', index=False)
+            df.to_sql(tableName, dbConnection,
+                      if_exists='replace', index=False)
 
     # Close the SQLite connection
-    conn.close()
+    dbConnection.close()
     print("Done, exiting")
 
 
