@@ -2,6 +2,7 @@
 import os
 import pandas
 import sqlite3
+import dask.dataframe as dd
 
 
 def main():
@@ -56,16 +57,17 @@ def databaseName():
 def csvToSqlite(folderPath, dbFolderPath, databaseName):
     # specify SQLite database path, file name, and extension
     dbPath = os.path.join(dbFolderPath, databaseName + '.db')
-    # Connect to SQLite database (or create it)
     dbConnection = sqlite3.connect(dbPath)
     cursor = dbConnection.cursor()
-    # Iterate through all CSV files in the folder
+    # Create a table to store the CSV data
     for filename in os.listdir(folderPath):
         if filename.endswith('.csv'):
             print(f"Processing {filename}...")
             # Read CSV file into DataFrame
             filePath = os.path.join(folderPath, filename)
             df = pandas.read_csv(filePath, low_memory=False)
+            # Process using Dask for larger dataframes
+            ddf = dd.from_pandas(df, npartitions=2)
             # Remove duplicates that exist within the first row
             firstRow = df.iloc[0]
             df = df.drop_duplicates(subset=firstRow.index.tolist())
