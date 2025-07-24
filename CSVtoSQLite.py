@@ -2,6 +2,7 @@
 import os
 import pandas
 import sqlite3
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 
 
 def main():
@@ -59,17 +60,32 @@ def csvToSqlite(folderPath, dbFolderPath, databaseName):
     conn = sqlite3.connect(dbPath)
     cursor = conn.cursor()
 
+    # Define the number of chunks and cores
+    chunk_size = 10000
+    num_cores = os.cpu_count()
+
     # Iterate through all CSV files in the folder
     for filename in os.listdir(folderPath):
         if filename.endswith('.csv'):
             print(f"Processing {filename}...")
             # Read CSV file into DataFrame
             filePath = os.path.join(folderPath, filename)
-            df = pandas.read_csv(filePath, low_memory=False)
 
-            # Remove duplicates that exist within the first row
-            firstRow = df.iloc[0]
-            df = df.drop_duplicates(subset=firstRow.index.tolist())
+            # Function to process each chunk
+            def process_chunk(chunk):
+                # Remove duplicates that exist within the first row
+                firstRow = chunk.iloc[0]
+                return chunk.drop_duplicates(subset=firstRow.index.tolist())
+
+            # Use ProcessPoolExecutor to process chunks in parallel
+            with ProcessPoolExecutor(max_workers=num_cores) as executor:
+                # Read in chunks and process them
+                chunks = pandas.read_csv(
+                    filePath, chunksize=chunk_size, low_memory=False)
+                processed_chunks = list(executor.map(process_chunk, chunks))
+
+            # Concatenate results back to a DataFrame
+            df = pandas.concat(processed_chunks)
 
             # Get table name from CSV file name (without extension)
             tableName = os.path.splitext(filename)[0]
